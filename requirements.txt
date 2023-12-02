@@ -4,4 +4,3 @@ numpy==1.23.5
 PyAudio==0.2.13
 tensorflow==2.14.0
 tensorflow_intel==2.14.0
-tensorflow_intel==2.13.0
