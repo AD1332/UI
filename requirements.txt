@@ -6,4 +6,4 @@ gunicorn==21.2.0
 Flask
 tensorflow
 tensorflow_intel
-pyaudio
+pyaudio==0.2.14
