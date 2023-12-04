@@ -1,10 +1,6 @@
-# app2.py
-# all 3 models without css
-
 from flask import Flask, render_template, request, jsonify, send_from_directory, send_file
 import subprocess
 import os
-# import pyaudio
 import wave
 import librosa
 import numpy as np
@@ -13,21 +9,22 @@ from array import array
 from struct import pack
 from tensorflow.keras.models import load_model 
 import time
+import sounddevice as sd  # Replace pyaudio with sounddevice
 
 app = Flask(__name__)
 
 # Load the FNN model here
 fnn_model = load_model("results/fnnmodel.h5")  # Replace with the correct path
 
-# Load the CNN model heres
+# Load the CNN model here
 cnn_model = load_model("results/cnnmodel.keras")  # Replace with the correct path
 
 # Load the LSTM model here
 lstm_model = load_model("results/lstm_model.h5")
-    
+
 THRESHOLD = 500
 CHUNK_SIZE = 1024
-FORMAT = pyaudio.paInt16
+FORMAT = np.int16  # Use numpy data type instead of pyaudio
 RATE = 16000
 SILENCE = 30
 
@@ -68,8 +65,6 @@ def add_silence(snd_data, seconds):
     r.extend([0 for _ in range(int(seconds*RATE))])
     return r
 
-import sounddevice as sd
-
 # Update the record function to use sounddevice for audio input
 def record():
     duration = 10  # Adjust the duration as needed
@@ -91,15 +86,16 @@ def record():
 
 
 def record_to_file(path):
-    sample_width, data = record()
-    data = pack('<' + ('h'*len(data)), *data)
+    audio_data = record()
 
     wf = wave.open(path, 'wb')
     wf.setnchannels(1)
-    wf.setsampwidth(sample_width)
+    wf.setsampwidth(2)  # Set sample width to 2 (corresponds to np.int16)
     wf.setframerate(RATE)
-    wf.writeframes(data)
+    wf.writeframes(audio_data.tobytes())  # Convert the numpy array to bytes
     wf.close()
+
+
 
 def extract_feature(file_name, **kwargs):
     mfcc = kwargs.get("mfcc")
@@ -186,3 +182,4 @@ def start_recording():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
