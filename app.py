@@ -68,41 +68,27 @@ def add_silence(snd_data, seconds):
     r.extend([0 for _ in range(int(seconds*RATE))])
     return r
 
+import sounddevice as sd
+
+# Update the record function to use sounddevice for audio input
 def record():
-    p = pyaudio.PyAudio()
-    stream = p.open(format=FORMAT, channels=1, rate=RATE,
-                    input=True, output=True,
-                    frames_per_buffer=CHUNK_SIZE)
+    duration = 10  # Adjust the duration as needed
+    fs = RATE
 
-    num_silent = 0
-    snd_started = False
-    r = array('h')
+    print("Recording...")
+    recording = sd.rec(int(duration * fs), samplerate=fs, channels=1, dtype=np.int16)
+    sd.wait()  # Wait until recording is finished
 
-    while True:
-        snd_data = array('h', stream.read(CHUNK_SIZE))
-        if byteorder == 'big':
-            snd_data.byteswap()
-        r.extend(snd_data)
+    # Convert the recorded data to a numpy array
+    audio_data = np.squeeze(recording)
 
-        silent = is_silent(snd_data)
+    # Normalize the audio data
+    audio_data = normalize(audio_data)
+    audio_data = trim(audio_data)
+    audio_data = add_silence(audio_data, 0.5)
 
-        if silent and snd_started:
-            num_silent += 1
-        elif not silent and not snd_started:
-            snd_started = True
+    return audio_data
 
-        if snd_started and num_silent > SILENCE:
-            break
-
-    sample_width = p.get_sample_size(FORMAT)
-    stream.stop_stream()
-    stream.close()
-    p.terminate()
-
-    r = normalize(r)
-    r = trim(r)
-    r = add_silence(r, 0.5)
-    return sample_width, r
 
 def record_to_file(path):
     sample_width, data = record()
